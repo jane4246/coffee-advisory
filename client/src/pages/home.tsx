@@ -104,6 +104,29 @@ export default function Home() {
 
   return (
     <main className="pb-20">
+      {/* Install App Banner */}
+      <section className="p-4">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-md p-4 mb-4 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold mb-1">📱 Install on Your Phone</h2>
+              <p className="text-sm opacity-90">Get offline access and faster diagnosis</p>
+            </div>
+            <Button 
+              className="bg-white text-green-600 hover:bg-gray-100 font-medium px-4 py-2 rounded-lg"
+              onClick={() => {
+                if ('serviceWorker' in navigator) {
+                  // This will trigger the install prompt if available
+                  window.dispatchEvent(new Event('beforeinstallprompt'));
+                }
+              }}
+            >
+              Install Now
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Quick Diagnosis Section */}
       <section className="p-4">
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
