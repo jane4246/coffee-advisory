@@ -137,10 +137,7 @@ async function diagnosePlantDisease(data: any) {
     diagnosis = analyzeTextSymptoms(data.symptoms);
   }
 
-  return {
-    ...data,
-    ...diagnosis
-  };
+  return diagnosis;
 }
 
 // Analyze image for plant diseases (would integrate with AI vision service)
@@ -151,7 +148,7 @@ async function analyzeImageForDiseases(imageUrl: string, additionalSymptoms: str
   // - AWS Rekognition Custom Labels
   // - Specialized agricultural AI services like PlantNet or PlantVillage
   
-  console.log(`Analyzing image: ${imageUrl} with additional symptoms: ${additionalSymptoms}`);
+  // AI image analysis would happen here in production
   
   // For now, return a comprehensive analysis based on common coffee diseases
   // This simulates what an AI vision service would return
@@ -201,7 +198,11 @@ async function analyzeImageForDiseases(imageUrl: string, additionalSymptoms: str
 function analyzeTextSymptoms(symptoms: string) {
   const lowerSymptoms = symptoms.toLowerCase();
   
-  if (lowerSymptoms.includes("yellow") && (lowerSymptoms.includes("spot") || lowerSymptoms.includes("powder"))) {
+  // More flexible pattern matching for yellow symptoms (Coffee Leaf Rust)
+  if (lowerSymptoms.includes("yellow") || 
+      lowerSymptoms.includes("orange") ||
+      lowerSymptoms.includes("rust") ||
+      lowerSymptoms.includes("powder")) {
     return {
       diseaseName: "Coffee Leaf Rust (Hemileia vastatrix)",
       description: "Fungal disease causing yellow-orange powdery spots on leaf undersides",
@@ -211,7 +212,8 @@ function analyzeTextSymptoms(symptoms: string) {
       confidence: "0.75",
       analysisNotes: "Text Analysis: Symptoms strongly suggest Coffee Leaf Rust based on yellow/powder description. High confidence match."
     };
-  } else if (lowerSymptoms.includes("brown") || lowerSymptoms.includes("black")) {
+  } else if (lowerSymptoms.includes("brown") || lowerSymptoms.includes("black") || 
+             lowerSymptoms.includes("dark") || lowerSymptoms.includes("spot")) {
     if (lowerSymptoms.includes("berry") || lowerSymptoms.includes("fruit")) {
       return {
         diseaseName: "Coffee Berry Disease (Colletotrichum kahawae)",
@@ -233,7 +235,9 @@ function analyzeTextSymptoms(symptoms: string) {
         analysisNotes: "Text Analysis: Brown/black leaf symptoms suggest Coffee Brown Eye Spot. Moderate confidence."
       };
     }
-  } else if (lowerSymptoms.includes("wilt") || lowerSymptoms.includes("droop")) {
+  } else if (lowerSymptoms.includes("wilt") || lowerSymptoms.includes("droop") || 
+             lowerSymptoms.includes("dying") || lowerSymptoms.includes("weak") ||
+             lowerSymptoms.includes("drooping")) {
     return {
       diseaseName: "Coffee Wilt Disease (Fusarium xylarioides)",
       description: "Fungal infection affecting vascular system causing wilting and branch dieback",
@@ -243,7 +247,9 @@ function analyzeTextSymptoms(symptoms: string) {
       confidence: "0.85",
       analysisNotes: "Text Analysis: Wilting symptoms strongly indicate Coffee Wilt Disease. Immediate action required."
     };
-  } else if (lowerSymptoms.includes("hole") || lowerSymptoms.includes("insect") || lowerSymptoms.includes("bore")) {
+  } else if (lowerSymptoms.includes("hole") || lowerSymptoms.includes("insect") || 
+             lowerSymptoms.includes("bore") || lowerSymptoms.includes("bug") ||
+             lowerSymptoms.includes("pest") || lowerSymptoms.includes("eaten")) {
     return {
       diseaseName: "Coffee Berry Borer (Hypothenemus hampei)",
       description: "Small beetles boring circular holes in coffee berries",

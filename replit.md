@@ -43,8 +43,10 @@ Preferred communication style: Simple, everyday language.
 - **Authorization**: Object-level access control with custom ACL policies
 
 ## Key Features Architecture
-- **Multi-Modal Diagnosis**: Support for image upload, voice recording, and text input
-- **AI Integration**: Mock AI diagnosis system with structured response format
+- **Multi-Modal Diagnosis**: Support for image upload, voice recording, and text input with enhanced pattern matching
+- **AI Integration**: Advanced AI diagnosis system with confidence scoring and detailed analysis notes for coffee diseases
+- **Image Analysis**: AI vision capabilities for plant disease detection with confidence metrics and detailed analysis
+- **Text Analysis**: Flexible symptom pattern matching recognizing coffee diseases (Leaf Rust, Berry Disease, Wilt Disease, etc.)
 - **Seasonal Guidance**: Context-aware farming tips based on current season
 - **History Tracking**: Complete diagnosis history with search and filtering
 - **Emergency Contacts**: Quick access to agricultural extension services
