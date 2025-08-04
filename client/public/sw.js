@@ -1,14 +1,12 @@
-const CACHE_NAME = 'nandi-coffee-advisory-v1';
+const CACHE_NAME = 'nandi-coffee-advisory-v2';
 const urlsToCache = [
   '/',
   '/diagnose',
-  '/guide',
+  '/guide', 
   '/history',
   '/settings',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/manifest.json',
+  '/icons/icon.svg'
 ];
 
 // Install service worker

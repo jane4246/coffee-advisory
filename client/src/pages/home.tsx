@@ -167,9 +167,24 @@ export default function Home() {
             <Button 
               className="bg-white text-green-600 hover:bg-gray-100 font-medium px-4 py-2 rounded-lg"
               onClick={() => {
-                if ('serviceWorker' in navigator) {
-                  // This will trigger the install prompt if available
-                  window.dispatchEvent(new Event('beforeinstallprompt'));
+                // Try to trigger PWA install prompt
+                if (window.deferredPrompt) {
+                  window.deferredPrompt.prompt();
+                } else {
+                  // Show manual install instructions
+                  alert(`To install this app on your Android:
+
+📱 Chrome Browser:
+1. Tap menu (3 dots) in top-right
+2. Look for "Install app" or "Add to Home screen" 
+3. Tap it and confirm
+
+📱 Alternative:
+- Look for install icon ⬇️ in address bar
+- Firefox: Menu → "Install"
+- Samsung Internet: Menu → "Add to Home screen"
+
+The app will appear on your home screen like WhatsApp or other apps!`);
                 }
               }}
             >

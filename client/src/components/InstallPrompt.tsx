@@ -19,54 +19,87 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        (window.navigator as any).standalone === true) {
       setIsInstalled(true);
       return;
     }
 
-    // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e);
-      setShowPrompt(true);
-    };
+    // Show prompt after a delay to let the page load
+    const timer = setTimeout(() => {
+      // Listen for the beforeinstallprompt event
+      const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+        console.log('beforeinstallprompt event fired');
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later
+        setDeferredPrompt(e);
+        setShowPrompt(true);
+      };
 
-    // Listen for app installed event
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setShowPrompt(false);
-      console.log('PWA was installed');
-    };
+      // Listen for app installed event
+      const handleAppInstalled = () => {
+        setIsInstalled(true);
+        setShowPrompt(false);
+        console.log('PWA was installed');
+      };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
-    window.addEventListener('appinstalled', handleAppInstalled);
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+      window.addEventListener('appinstalled', handleAppInstalled);
 
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
+      // For Android Chrome, show manual instruction if no beforeinstallprompt
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isChrome = /Chrome/i.test(navigator.userAgent);
+      
+      if (isAndroid && isChrome && !deferredPrompt) {
+        // Show manual install instruction for Android Chrome
+        setTimeout(() => {
+          if (!isInstalled) {
+            setShowPrompt(true);
+          }
+        }, 3000);
+      }
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+      };
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [deferredPrompt, isInstalled]);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (deferredPrompt) {
+      // Show the install prompt
+      deferredPrompt.prompt();
 
-    // Show the install prompt
-    deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredPrompt.userChoice;
 
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
 
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+      // Clear the deferredPrompt
+      setDeferredPrompt(null);
+      setShowPrompt(false);
     } else {
-      console.log('User dismissed the install prompt');
-    }
+      // Show manual installation instructions
+      alert(`To install this app on your Android phone:
 
-    // Clear the deferredPrompt
-    setDeferredPrompt(null);
-    setShowPrompt(false);
+1. Open Chrome browser menu (3 dots)
+2. Look for "Install app" or "Add to Home screen"
+3. Tap it and confirm
+4. The app will appear on your home screen
+
+Alternative:
+- In Chrome: Menu → "Add to Home screen"
+- In Firefox: Menu → "Install"
+- In Samsung Internet: Menu → "Add page to" → "Home screen"`);
+    }
   };
 
   const handleDismiss = () => {
