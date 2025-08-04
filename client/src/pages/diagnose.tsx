@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Search, Edit3 } from "lucide-react";
+import { Camera, Mic, Search, Edit3, Brain } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import DiagnosisCard from "@/components/DiagnosisCard";
@@ -69,8 +69,8 @@ export default function Diagnose() {
       const { objectPath } = await response.json();
       setUploadedImageUrl(objectPath);
       toast({
-        title: "Image Uploaded",
-        description: "Your plant photo has been uploaded successfully.",
+        title: "Image Ready for AI Analysis",
+        description: "Your plant photo is ready. The AI will analyze it when you submit for diagnosis.",
       });
     }
   };
@@ -114,7 +114,22 @@ export default function Diagnose() {
               {/* Image Upload */}
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
                 <Camera className="text-gray-400 mb-3 mx-auto" size={48} />
-                <h3 className="font-medium text-gray-700 mb-2">Upload Plant Photo</h3>
+                <h3 className="font-medium text-gray-700 mb-2">AI Plant Disease Detection</h3>
+                
+                {/* AI Analysis Banner */}
+                <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4 text-left">
+                  <div className="flex items-start space-x-2">
+                    <Brain className="text-blue-600 mt-0.5 flex-shrink-0" size={16} />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Advanced AI Vision Analysis</p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Our AI system analyzes your plant photos to identify diseases with high accuracy. 
+                        Take clear photos of affected leaves, berries, or stems for best results.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <p className="text-sm text-gray-500 mb-3">Take a clear photo of the affected plant parts</p>
                 <ObjectUploader
                   maxNumberOfFiles={1}

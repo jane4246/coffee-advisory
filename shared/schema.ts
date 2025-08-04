@@ -21,6 +21,8 @@ export const diagnoses = pgTable("diagnoses", {
   imageUrl: text("image_url"),
   voiceRecordingUrl: text("voice_recording_url"),
   diagnosisMethod: text("diagnosis_method").notNull(), // 'image', 'voice', 'text'
+  confidence: text("confidence"), // AI confidence score (0.0-1.0)
+  analysisNotes: text("analysis_notes"), // Additional AI analysis details
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
