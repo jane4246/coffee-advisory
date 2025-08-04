@@ -9,8 +9,8 @@ export default function Header() {
           <div className="flex items-center space-x-3">
             <Leaf size={24} />
             <div>
-              <h1 className="text-lg font-semibold">Coffee AI</h1>
-              <p className="text-xs opacity-90">Disease Diagnosis Assistant</p>
+              <h1 className="text-lg font-semibold">Nandi Coffee Advisory</h1>
+              <p className="text-xs opacity-90">AI Agricultural Assistant</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" className="p-2 rounded-full hover:bg-green-600 transition-colors text-white">

@@ -1,6 +1,6 @@
 # Overview
 
-This is a Coffee AI Disease Diagnosis Assistant - a full-stack web application designed to help coffee farmers identify and treat plant diseases. The application combines modern web technologies with AI-powered diagnosis capabilities, enabling farmers to upload images, record voice descriptions, or provide text descriptions of symptoms to receive comprehensive disease analysis and treatment recommendations.
+This is Nandi Coffee Advisory - a specialized coffee farming AI assistant designed to help farmers in the Nandi region of Kenya identify and treat plant diseases. The application combines modern web technologies with AI-powered diagnosis capabilities, enabling farmers to upload images, record voice descriptions, or provide text descriptions of symptoms to receive comprehensive disease analysis and treatment recommendations.
 
 The system provides personalized farming guidance, seasonal tips, emergency contact information, and maintains a history of previous diagnoses to help farmers track their crop health over time.
 
