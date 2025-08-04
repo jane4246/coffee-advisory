@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDiagnosisSchema } from "@shared/schema";
+import { createDiagnosisInputSchema } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -20,14 +20,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new diagnosis
   app.post("/api/diagnoses", async (req, res) => {
     try {
-      const validation = insertDiagnosisSchema.safeParse(req.body);
+      const validation = createDiagnosisInputSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid diagnosis data", details: validation.error });
       }
 
       // AI diagnosis based on symptoms and/or image analysis
-      const diagnosis = await diagnosePlantDisease(validation.data);
-      const savedDiagnosis = await storage.createDiagnosis(diagnosis);
+      const aiResult = await diagnosePlantDisease(validation.data);
+      
+      // Create diagnosis object that matches InsertDiagnosis schema
+      const diagnosisToSave = {
+        userId: null, // No user authentication yet
+        symptoms: validation.data.symptoms,
+        diagnosisMethod: validation.data.diagnosisMethod,
+        imageUrl: validation.data.imageUrl || null,
+        voiceRecordingUrl: validation.data.voiceRecordingUrl || null,
+        diseaseName: aiResult.diseaseName,
+        description: aiResult.description,
+        severity: aiResult.severity,
+        treatment: aiResult.treatment,
+        prevention: aiResult.prevention,
+        confidence: aiResult.confidence || null,
+        analysisNotes: aiResult.analysisNotes || null,
+      };
+      
+      const savedDiagnosis = await storage.createDiagnosis(diagnosisToSave);
       
       res.json(savedDiagnosis);
     } catch (error) {
@@ -190,7 +207,9 @@ function analyzeTextSymptoms(symptoms: string) {
       description: "Fungal disease causing yellow-orange powdery spots on leaf undersides",
       severity: "High Risk",
       treatment: "Apply copper-based fungicide immediately. Use systemic fungicides like propiconazole. Improve plant nutrition with potassium and phosphorus fertilizers.",
-      prevention: "Plant rust-resistant varieties (e.g., Ruiru 11, Batian). Maintain proper plant spacing for air circulation. Regular pruning and removal of infected leaves."
+      prevention: "Plant rust-resistant varieties (e.g., Ruiru 11, Batian). Maintain proper plant spacing for air circulation. Regular pruning and removal of infected leaves.",
+      confidence: "0.75",
+      analysisNotes: "Text Analysis: Symptoms strongly suggest Coffee Leaf Rust based on yellow/powder description. High confidence match."
     };
   } else if (lowerSymptoms.includes("brown") || lowerSymptoms.includes("black")) {
     if (lowerSymptoms.includes("berry") || lowerSymptoms.includes("fruit")) {
@@ -199,7 +218,9 @@ function analyzeTextSymptoms(symptoms: string) {
         description: "Fungal infection causing dark sunken lesions on green berries",
         severity: "High Risk",
         treatment: "Apply copper fungicides during flowering and early berry development. Remove and destroy infected berries immediately.",
-        prevention: "Use certified disease-free seedlings. Ensure good drainage and avoid overhead irrigation during flowering."
+        prevention: "Use certified disease-free seedlings. Ensure good drainage and avoid overhead irrigation during flowering.",
+        confidence: "0.80",
+        analysisNotes: "Text Analysis: Brown/black symptoms on berries indicate Coffee Berry Disease. High confidence match."
       };
     } else {
       return {
@@ -207,7 +228,9 @@ function analyzeTextSymptoms(symptoms: string) {
         description: "Fungal disease causing brown spots with light centers on leaves",
         severity: "Medium Risk",
         treatment: "Apply copper-based fungicides. Improve air circulation around plants.",
-        prevention: "Maintain proper plant spacing. Remove fallen leaves. Avoid overhead watering."
+        prevention: "Maintain proper plant spacing. Remove fallen leaves. Avoid overhead watering.",
+        confidence: "0.65",
+        analysisNotes: "Text Analysis: Brown/black leaf symptoms suggest Coffee Brown Eye Spot. Moderate confidence."
       };
     }
   } else if (lowerSymptoms.includes("wilt") || lowerSymptoms.includes("droop")) {
@@ -216,7 +239,9 @@ function analyzeTextSymptoms(symptoms: string) {
       description: "Fungal infection affecting vascular system causing wilting and branch dieback",
       severity: "High Risk",
       treatment: "Remove affected plants immediately to prevent spread. Improve soil drainage. Apply organic soil amendments.",
-      prevention: "Use disease-resistant varieties. Improve soil drainage. Practice crop rotation. Use certified disease-free seedlings."
+      prevention: "Use disease-resistant varieties. Improve soil drainage. Practice crop rotation. Use certified disease-free seedlings.",
+      confidence: "0.85",
+      analysisNotes: "Text Analysis: Wilting symptoms strongly indicate Coffee Wilt Disease. Immediate action required."
     };
   } else if (lowerSymptoms.includes("hole") || lowerSymptoms.includes("insect") || lowerSymptoms.includes("bore")) {
     return {
@@ -224,7 +249,9 @@ function analyzeTextSymptoms(symptoms: string) {
       description: "Small beetles boring circular holes in coffee berries",
       severity: "Medium Risk",
       treatment: "Use pheromone traps to monitor and capture adults. Apply organic insecticides like neem oil or Beauveria bassiana.",
-      prevention: "Harvest ripe berries promptly. Clean farm of fallen berries. Use shade trees to create unfavorable conditions for borers."
+      prevention: "Harvest ripe berries promptly. Clean farm of fallen berries. Use shade trees to create unfavorable conditions for borers.",
+      confidence: "0.90",
+      analysisNotes: "Text Analysis: Hole/boring symptoms clearly indicate Coffee Berry Borer. Very high confidence."
     };
   } else if (lowerSymptoms.includes("white") && lowerSymptoms.includes("powder")) {
     return {
@@ -232,7 +259,9 @@ function analyzeTextSymptoms(symptoms: string) {
       description: "Fungal disease causing white powdery growth on leaves",
       severity: "Low Risk",
       treatment: "Apply sulfur-based fungicides. Improve air circulation around plants.",
-      prevention: "Maintain proper plant spacing. Avoid overhead watering. Remove affected plant parts."
+      prevention: "Maintain proper plant spacing. Avoid overhead watering. Remove affected plant parts.",
+      confidence: "0.70",
+      analysisNotes: "Text Analysis: White powder symptoms indicate Powdery Mildew. Good confidence match."
     };
   }
 
@@ -241,6 +270,8 @@ function analyzeTextSymptoms(symptoms: string) {
     description: "Unable to identify specific disease from provided symptoms",
     severity: "Medium Risk",
     treatment: "Contact your local agricultural extension officer for proper identification. Take clear photos of affected plant parts.",
-    prevention: "Maintain good plant hygiene, proper spacing, and regular monitoring of plant health."
+    prevention: "Maintain good plant hygiene, proper spacing, and regular monitoring of plant health.",
+    confidence: "0.3",
+    analysisNotes: "Text Analysis: Symptoms require more specific description for accurate diagnosis. Consider providing additional details or taking photos."
   };
 }

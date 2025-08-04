@@ -50,6 +50,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
+// Input schema for creating diagnoses - only requires minimal fields
+export const createDiagnosisInputSchema = z.object({
+  symptoms: z.string().min(1, "Symptoms description is required"),
+  diagnosisMethod: z.enum(["image", "voice", "text"]),
+  imageUrl: z.string().optional().nullable(),
+  voiceRecordingUrl: z.string().optional().nullable(),
+});
+
 export const insertDiagnosisSchema = createInsertSchema(diagnoses).omit({
   id: true,
   createdAt: true,
@@ -66,6 +74,7 @@ export const insertEmergencyContactSchema = createInsertSchema(emergencyContacts
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type CreateDiagnosisInput = z.infer<typeof createDiagnosisInputSchema>;
 export type InsertDiagnosis = z.infer<typeof insertDiagnosisSchema>;
 export type Diagnosis = typeof diagnoses.$inferSelect;
 export type InsertFarmingTip = z.infer<typeof insertFarmingTipSchema>;
