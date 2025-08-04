@@ -58,11 +58,19 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
 
   const analyzeRecording = () => {
     // In a real implementation, this would send the audio to a speech-to-text service
-    // For now, we'll simulate with a mock response
-    const mockTranscript = "My coffee plants have brown spots on the leaves and some of the berries are turning black. The leaves are also starting to wilt.";
+    // For now, we'll simulate with realistic coffee disease descriptions
+    const mockTranscripts = [
+      "My coffee plants have yellow spots on the leaves that look like rust powder",
+      "The coffee berries are turning black and rotting on the tree",
+      "My plants are wilting and the leaves are dropping even though I water them",
+      "Brown spots with light centers are appearing on many leaves",
+      "The coffee plants look weak and the branches are dying back"
+    ];
+    
+    const randomTranscript = mockTranscripts[Math.floor(Math.random() * mockTranscripts.length)];
     
     if (onRecordingComplete) {
-      onRecordingComplete(mockTranscript);
+      onRecordingComplete(randomTranscript);
     }
     
     setIsModalOpen(false);
@@ -70,7 +78,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
     
     toast({
       title: "Voice Analysis Complete",
-      description: "Your audio has been processed and analyzed.",
+      description: "Your audio has been converted to text and analyzed for diseases.",
     });
   };
 

@@ -91,6 +91,30 @@ export default function Home() {
     }
   };
 
+  const handleVoiceAnalysis = async (transcript: string) => {
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch("/api/diagnoses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symptoms: transcript,
+          diagnosisMethod: "voice",
+          voiceRecordingUrl: null,
+        }),
+      });
+      
+      if (response.ok) {
+        // Refresh diagnoses list to show new result
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error analyzing voice:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleAnalyzeSymptoms = async () => {
     if (!symptomDescription.trim()) return;
     
@@ -192,7 +216,10 @@ export default function Home() {
               <Mic className="text-3xl text-orange-500 mb-3 mx-auto" size={48} />
               <h3 className="font-medium text-gray-700 mb-2">Voice Description</h3>
               <p className="text-sm text-gray-500 mb-4">Describe symptoms in your local language</p>
-              <VoiceRecorder />
+              <VoiceRecorder onRecordingComplete={handleVoiceAnalysis} />
+              {isAnalyzing && (
+                <p className="text-sm text-blue-600 mt-2">🎙️ Processing voice recording and analyzing symptoms...</p>
+              )}
             </div>
 
             {/* Text Input */}
