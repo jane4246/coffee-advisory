@@ -56,6 +56,8 @@ Preferred communication style: Simple, everyday language.
 - **Hot Reload**: Vite dev server with Express integration
 - **Type Safety**: Full-stack TypeScript with shared schema validation using Zod
 - **Code Organization**: Clear separation between client, server, and shared code
+- **Progressive Web App**: PWA-enabled for Android installation and offline functionality
+- **Mobile-First**: Optimized for Android phones with install prompts and native-like experience
 
 # External Dependencies
 

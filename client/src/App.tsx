@@ -11,6 +11,7 @@ import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 import Header from "@/components/Header";
+import InstallPrompt from "@/components/InstallPrompt";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <BottomNavigation />
+      <InstallPrompt />
     </div>
   );
 }

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#16a34a"/>
+  
+  <!-- Coffee plant stem -->
+  <path d="M256 100v280" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Coffee leaves -->
+  <ellipse cx="200" cy="160" rx="40" ry="20" fill="#22c55e" transform="rotate(-30 200 160)"/>
+  <ellipse cx="312" cy="200" rx="40" ry="20" fill="#22c55e" transform="rotate(30 312 200)"/>
+  <ellipse cx="180" cy="240" rx="40" ry="20" fill="#22c55e" transform="rotate(-30 180 240)"/>
+  <ellipse cx="332" cy="280" rx="40" ry="20" fill="#22c55e" transform="rotate(30 332 280)"/>
+  
+  <!-- Coffee berries -->
+  <circle cx="220" cy="190" r="8" fill="#dc2626"/>
+  <circle cx="292" cy="230" r="8" fill="#dc2626"/>
+  <circle cx="200" cy="270" r="8" fill="#dc2626"/>
+  <circle cx="312" cy="310" r="8" fill="#dc2626"/>
+  
+  <!-- AI indicator -->
+  <circle cx="400" cy="120" r="30" fill="white"/>
+  <path d="M390 110h20M390 120h20M390 130h20" stroke="#16a34a" stroke-width="3"/>
+  
+  <!-- Root system -->
+  <path d="M256 380c-20 20-40 30-60 40M256 380c20 20 40 30 60 40M256 380c0 25-10 35-20 50M256 380c0 25 10 35 20 50" 
+        stroke="white" stroke-width="8" stroke-linecap="round"/>
+</svg>
