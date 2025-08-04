@@ -28,6 +28,7 @@ import type { UploadResult } from "@uppy/core";
 export default function Home() {
   const [symptomDescription, setSymptomDescription] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const { data: diagnoses, isLoading: diagnosesLoading } = useQuery<Diagnosis[]>({
     queryKey: ["/api/diagnoses"],
@@ -60,6 +61,33 @@ export default function Home() {
       });
       const { objectPath } = await response.json();
       setUploadedImageUrl(objectPath);
+      
+      // Automatically analyze the uploaded image
+      await handleImageAnalysis(objectPath);
+    }
+  };
+
+  const handleImageAnalysis = async (imageUrl: string) => {
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch("/api/diagnoses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symptoms: "Image uploaded for analysis",
+          diagnosisMethod: "image",
+          imageUrl: imageUrl,
+        }),
+      });
+      
+      if (response.ok) {
+        // Refresh diagnoses list to show new result
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -151,8 +179,11 @@ export default function Home() {
                 <Camera className="mr-2" size={16} />
                 Choose Photo
               </ObjectUploader>
-              {uploadedImageUrl && (
-                <p className="text-sm text-green-600 mt-2">✓ Image uploaded successfully</p>
+              {uploadedImageUrl && !isAnalyzing && (
+                <p className="text-sm text-green-600 mt-2">✓ Image uploaded and analyzed successfully</p>
+              )}
+              {isAnalyzing && (
+                <p className="text-sm text-blue-600 mt-2">🔍 Analyzing your coffee plant image...</p>
               )}
             </div>
 
