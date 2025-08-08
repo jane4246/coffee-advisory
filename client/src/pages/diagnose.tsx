@@ -4,53 +4,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Search, Edit3, Brain } from "lucide-react";
-import { ObjectUploader } from "@/components/ObjectUploader";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import DiagnosisCard from "@/components/DiagnosisCard";
 import type { Diagnosis } from "@shared/schema";
-import type { UploadResult } from "@uppy/core";
 import { useToast } from "@/hooks/use-toast";
 
-// Use the environment variable you configured on Render.
+// Use the environment variable you configured on Render for the AI backend URL.
 const H5_BACKEND_URL = import.meta.env.VITE_H5_BACKEND_URL;
-
-/**
- * This function handles the AI analysis by sending the image to the Python backend.
- * @param imageUrl The URL of the image that has been uploaded to the Node.js backend.
- * @returns A promise that resolves with the AI's prediction.
- */
-const analyzeImageWithPythonAI = async (imageUrl: string): Promise<string> => {
-  if (!H5_BACKEND_URL) {
-    throw new Error("AI backend URL is not configured.");
-  }
-  
-  // Fetch the image as a Blob so we can send it in a FormData object.
-  const response = await fetch(imageUrl);
-  const imageBlob = await response.blob();
-  
-  // Create a FormData object to send the image file.
-  const formData = new FormData();
-  // The key 'image' must match what your Python backend expects in predict.py.
-  formData.append('image', imageBlob, 'plant_image.jpg');
-
-  // Send the image directly to the Python backend's /predict endpoint.
-  const apiResponse = await fetch(`${H5_BACKEND_URL}/predict`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!apiResponse.ok) {
-    throw new Error('AI analysis failed. Server returned an error.');
-  }
-
-  // Assuming the Python backend returns a JSON object like { "prediction": "Healthy" }
-  const data = await apiResponse.json();
-  return data.prediction;
-};
 
 export default function Diagnose() {
   const [symptomDescription, setSymptomDescription] = useState("");
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -71,7 +35,7 @@ export default function Diagnose() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/diagnoses"] });
       setSymptomDescription("");
-      setUploadedImageUrl("");
+      setImageFile(null); // Clear the image file
       toast({
         title: "Diagnosis Complete",
         description: "Your coffee plant has been analyzed successfully.",
@@ -87,36 +51,19 @@ export default function Diagnose() {
     },
   });
 
-  // This function remains the same as it's part of the Uppy component's internal logic.
-  const handleGetUploadParameters = async () => {
-    const response = await fetch("/api/objects/upload", { method: "POST" });
-    const { uploadURL } = await response.json();
-    return {
-      method: "PUT" as const,
-      url: uploadURL,
-    };
-  };
-
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful[0]) {
-      const uploadURL = result.successful[0].uploadURL as string;
-      const response = await fetch("/api/plant-images", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageURL: uploadURL }),
-      });
-      const { objectPath } = await response.json();
-      setUploadedImageUrl(objectPath);
+  // New function to handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setImageFile(event.target.files[0]);
       toast({
-        title: "Image Ready for AI Analysis",
-        description: "Your plant photo is ready. The AI will analyze it when you submit for diagnosis.",
+        title: "Image Selected",
+        description: `${event.target.files[0].name} is ready for AI analysis.`,
       });
     }
   };
 
-  // This is the updated function. It will now call the AI backend for a real prediction.
   const handleAnalyzeSymptoms = async () => {
-    if (!symptomDescription.trim() && !uploadedImageUrl) {
+    if (!symptomDescription.trim() && !imageFile) {
       toast({
         title: "Missing Information",
         description: "Please describe the symptoms or upload an image.",
@@ -125,30 +72,47 @@ export default function Diagnose() {
       return;
     }
     
-    try {
-      let aiPrediction = "No image provided for AI analysis.";
-      if (uploadedImageUrl) {
-        // Call the new function to get the real AI prediction from the Python backend
-        aiPrediction = await analyzeImageWithPythonAI(uploadedImageUrl);
+    let aiPrediction = "No image provided for AI analysis.";
+    if (imageFile) {
+      // Create a FormData object to send the image file directly
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      try {
+        if (!H5_BACKEND_URL) {
+          throw new Error("AI backend URL is not configured.");
+        }
+        
+        const apiResponse = await fetch(`${H5_BACKEND_URL}/predict`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!apiResponse.ok) {
+          throw new Error('AI analysis failed. Server returned an error.');
+        }
+
+        const data = await apiResponse.json();
+        aiPrediction = data.prediction;
+
+      } catch (error) {
+        console.error("Error during AI analysis:", error);
+        toast({
+          title: "AI Analysis Failed",
+          description: error instanceof Error ? error.message : "An unexpected error occurred.",
+          variant: "destructive",
+        });
+        return;
       }
-
-      // Trigger the mutation to save the diagnosis, including the AI's prediction.
-      diagnosisMutation.mutate({
-        symptoms: symptomDescription,
-        diagnosisMethod: uploadedImageUrl ? "image" : "text",
-        imageUrl: uploadedImageUrl || null,
-        // The `aiPrediction` from the Python backend is now saved as the `diseaseName`.
-        diseaseName: aiPrediction,
-      });
-
-    } catch (error) {
-      console.error("Error during AI analysis:", error);
-      toast({
-        title: "AI Analysis Failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred.",
-        variant: "destructive",
-      });
     }
+
+    diagnosisMutation.mutate({
+      symptoms: symptomDescription,
+      diagnosisMethod: imageFile ? "image" : "text",
+      imageUrl: null, // No image URL, as it's not saved to storage
+      // The `aiPrediction` from the Python backend is now saved as the `diseaseName`.
+      diseaseName: aiPrediction,
+    });
   };
 
   const handleVoiceRecordingComplete = (transcript: string) => {
@@ -170,12 +134,11 @@ export default function Diagnose() {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">How can we help diagnose your coffee plant?</h2>
             
             <div className="space-y-6">
-              {/* Image Upload */}
+              {/* Image Upload - now with a simple file input */}
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
                 <Camera className="text-gray-400 mb-3 mx-auto" size={48} />
                 <h3 className="font-medium text-gray-700 mb-2">AI Plant Disease Detection</h3>
                 
-                {/* AI Analysis Banner */}
                 <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4 text-left">
                   <div className="flex items-start space-x-2">
                     <Brain className="text-blue-600 mt-0.5 flex-shrink-0" size={16} />
@@ -190,18 +153,23 @@ export default function Diagnose() {
                 </div>
                 
                 <p className="text-sm text-gray-500 mb-3">Take a clear photo of the affected plant parts</p>
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={10485760}
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
-                >
-                  <Camera className="mr-2" size={16} />
-                  Choose Photo
-                </ObjectUploader>
-                {uploadedImageUrl && (
-                  <p className="text-sm text-green-600 mt-2">✓ Image uploaded successfully</p>
+                <div className="relative">
+                  <Button asChild className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Camera className="mr-2" size={16} />
+                      Choose Photo
+                    </label>
+                  </Button>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleFileChange}
+                  />
+                </div>
+                {imageFile && (
+                  <p className="text-sm text-green-600 mt-2">✓ {imageFile.name} is ready</p>
                 )}
               </div>
 
@@ -229,7 +197,7 @@ export default function Diagnose() {
                 <Button 
                   onClick={handleAnalyzeSymptoms}
                   className="bg-secondary text-white hover:bg-green-500"
-                  disabled={!symptomDescription.trim() && !uploadedImageUrl || diagnosisMutation.isPending}
+                  disabled={!symptomDescription.trim() && !imageFile || diagnosisMutation.isPending}
                 >
                   <Search className="mr-2" size={16} />
                   {diagnosisMutation.isPending ? "Analyzing..." : "Analyze Symptoms"}
