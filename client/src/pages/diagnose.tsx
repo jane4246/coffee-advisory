@@ -11,18 +11,17 @@ import type { Diagnosis } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 import { useToast } from "@/hooks/use-toast";
 
-// It's a good practice to use an environment variable for the backend URL.
-// The backend service URL is from your previous message.
+// Use the environment variable you configured on Render for the AI backend URL.
 const H5_BACKEND_URL = import.meta.env.VITE_H5_BACKEND_URL;
 
 /**
- * This function handles the AI analysis by sending the image to the backend.
- * @param imageUrl The URL of the image that has been uploaded.
+ * This function handles the AI analysis by sending the image to the Python backend.
+ * @param imageUrl The URL of the image that has been uploaded to the Node.js backend.
  * @returns A promise that resolves with the AI's prediction.
  */
-const analyzeWithAI = async (imageUrl: string): Promise<string> => {
+const analyzeImageWithPythonAI = async (imageUrl: string): Promise<string> => {
   if (!H5_BACKEND_URL) {
-    throw new Error("Backend URL is not configured.");
+    throw new Error("AI backend URL is not configured.");
   }
   
   // Fetch the image as a Blob so we can send it in a FormData object.
@@ -31,9 +30,10 @@ const analyzeWithAI = async (imageUrl: string): Promise<string> => {
   
   // Create a FormData object to send the image file.
   const formData = new FormData();
-  formData.append('file', imageBlob); // 'file' should match the key your backend expects.
+  // The key 'image' must match what your Python backend expects in predict.py.
+  formData.append('image', imageBlob, 'plant_image.jpg');
 
-  // Send the image to the backend's /predict endpoint.
+  // Send the image directly to the Python backend's /predict endpoint.
   const apiResponse = await fetch(`${H5_BACKEND_URL}/predict`, {
     method: 'POST',
     body: formData,
@@ -43,7 +43,7 @@ const analyzeWithAI = async (imageUrl: string): Promise<string> => {
     throw new Error('AI analysis failed. Server returned an error.');
   }
 
-  // Assuming the backend returns a JSON object like { "prediction": "healthy" }
+  // Assuming the Python backend returns a JSON object like { "prediction": "Healthy" }
   const data = await apiResponse.json();
   return data.prediction;
 };
@@ -87,6 +87,7 @@ export default function Diagnose() {
     },
   });
 
+  // This function remains the same as it's part of the Uppy component's internal logic.
   const handleGetUploadParameters = async () => {
     const response = await fetch("/api/objects/upload", { method: "POST" });
     const { uploadURL } = await response.json();
@@ -127,7 +128,8 @@ export default function Diagnose() {
     try {
       let aiPrediction = "No image provided for AI analysis.";
       if (uploadedImageUrl) {
-        aiPrediction = await analyzeWithAI(uploadedImageUrl);
+        // Call the new function to get the real AI prediction from the Python backend
+        aiPrediction = await analyzeImageWithPythonAI(uploadedImageUrl);
       }
 
       // Trigger the mutation to save the diagnosis, including the AI's prediction.
@@ -150,10 +152,11 @@ export default function Diagnose() {
   };
 
   const handleVoiceRecordingComplete = (transcript: string) => {
+    // This part of the code remains unchanged.
     diagnosisMutation.mutate({
       symptoms: transcript,
       diagnosisMethod: "voice",
-      voiceRecordingUrl: null, // Voice recordings would be stored separately
+      voiceRecordingUrl: null,
     });
   };
 
