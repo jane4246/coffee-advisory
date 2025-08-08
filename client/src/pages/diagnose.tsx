@@ -11,7 +11,7 @@ import type { Diagnosis } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 import { useToast } from "@/hooks/use-toast";
 
-// Use the environment variable you configured on Render for the AI backend URL.
+// Use the environment variable you configured on Render.
 const H5_BACKEND_URL = import.meta.env.VITE_H5_BACKEND_URL;
 
 /**
@@ -137,8 +137,8 @@ export default function Diagnose() {
         symptoms: symptomDescription,
         diagnosisMethod: uploadedImageUrl ? "image" : "text",
         imageUrl: uploadedImageUrl || null,
-        // Assuming your backend stores the prediction as a field in the diagnosis object.
-        aiPrediction: aiPrediction,
+        // The `aiPrediction` from the Python backend is now saved as the `diseaseName`.
+        diseaseName: aiPrediction,
       });
 
     } catch (error) {
@@ -152,7 +152,6 @@ export default function Diagnose() {
   };
 
   const handleVoiceRecordingComplete = (transcript: string) => {
-    // This part of the code remains unchanged.
     diagnosisMutation.mutate({
       symptoms: transcript,
       diagnosisMethod: "voice",
