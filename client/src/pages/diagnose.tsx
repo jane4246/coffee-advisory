@@ -11,6 +11,43 @@ import type { Diagnosis } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 import { useToast } from "@/hooks/use-toast";
 
+// It's a good practice to use an environment variable for the backend URL.
+// The backend service URL is from your previous message.
+const H5_BACKEND_URL = import.meta.env.VITE_H5_BACKEND_URL;
+
+/**
+ * This function handles the AI analysis by sending the image to the backend.
+ * @param imageUrl The URL of the image that has been uploaded.
+ * @returns A promise that resolves with the AI's prediction.
+ */
+const analyzeWithAI = async (imageUrl: string): Promise<string> => {
+  if (!H5_BACKEND_URL) {
+    throw new Error("Backend URL is not configured.");
+  }
+  
+  // Fetch the image as a Blob so we can send it in a FormData object.
+  const response = await fetch(imageUrl);
+  const imageBlob = await response.blob();
+  
+  // Create a FormData object to send the image file.
+  const formData = new FormData();
+  formData.append('file', imageBlob); // 'file' should match the key your backend expects.
+
+  // Send the image to the backend's /predict endpoint.
+  const apiResponse = await fetch(`${H5_BACKEND_URL}/predict`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!apiResponse.ok) {
+    throw new Error('AI analysis failed. Server returned an error.');
+  }
+
+  // Assuming the backend returns a JSON object like { "prediction": "healthy" }
+  const data = await apiResponse.json();
+  return data.prediction;
+};
+
 export default function Diagnose() {
   const [symptomDescription, setSymptomDescription] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
@@ -40,10 +77,11 @@ export default function Diagnose() {
         description: "Your coffee plant has been analyzed successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Diagnosis mutation error:", error);
       toast({
         title: "Error",
-        description: "Failed to analyze symptoms. Please try again.",
+        description: error.message || "Failed to analyze symptoms. Please try again.",
         variant: "destructive",
       });
     },
@@ -75,21 +113,40 @@ export default function Diagnose() {
     }
   };
 
-  const handleAnalyzeSymptoms = () => {
-    if (!symptomDescription.trim()) {
+  // This is the updated function. It will now call the AI backend for a real prediction.
+  const handleAnalyzeSymptoms = async () => {
+    if (!symptomDescription.trim() && !uploadedImageUrl) {
       toast({
         title: "Missing Information",
-        description: "Please describe the symptoms you're observing.",
+        description: "Please describe the symptoms or upload an image.",
         variant: "destructive",
       });
       return;
     }
     
-    diagnosisMutation.mutate({
-      symptoms: symptomDescription,
-      diagnosisMethod: uploadedImageUrl ? "image" : "text",
-      imageUrl: uploadedImageUrl || null,
-    });
+    try {
+      let aiPrediction = "No image provided for AI analysis.";
+      if (uploadedImageUrl) {
+        aiPrediction = await analyzeWithAI(uploadedImageUrl);
+      }
+
+      // Trigger the mutation to save the diagnosis, including the AI's prediction.
+      diagnosisMutation.mutate({
+        symptoms: symptomDescription,
+        diagnosisMethod: uploadedImageUrl ? "image" : "text",
+        imageUrl: uploadedImageUrl || null,
+        // Assuming your backend stores the prediction as a field in the diagnosis object.
+        aiPrediction: aiPrediction,
+      });
+
+    } catch (error) {
+      console.error("Error during AI analysis:", error);
+      toast({
+        title: "AI Analysis Failed",
+        description: error instanceof Error ? error.message : "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleVoiceRecordingComplete = (transcript: string) => {
@@ -170,7 +227,7 @@ export default function Diagnose() {
                 <Button 
                   onClick={handleAnalyzeSymptoms}
                   className="bg-secondary text-white hover:bg-green-500"
-                  disabled={!symptomDescription.trim() || diagnosisMutation.isPending}
+                  disabled={!symptomDescription.trim() && !uploadedImageUrl || diagnosisMutation.isPending}
                 >
                   <Search className="mr-2" size={16} />
                   {diagnosisMutation.isPending ? "Analyzing..." : "Analyze Symptoms"}
